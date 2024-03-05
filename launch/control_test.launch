@@ -1,0 +1,15 @@
+<launch>
+    <!-- Controller -->
+    <node pkg="auto_car" type="controller" respawn="false" name="L1_controller_v2" output="screen">       
+        <!-- L1 -->
+        <param name="Vcmd" value="1.0" /> <!-- speed of car m/s -->        
+        <!-- ESC -->
+        <param name="baseSpeed" value="1425"/> <!-- pwm for motor constant speed, 1480: stop, 1440: ~0.5m/s, 1430: ~1.5m/s --> 
+        <!-- Servo -->
+        <param name="baseAngle" value="90.0"/> <!-- the middle pos of servo, for tt02: 87, for hsp: ? -->
+        <param name="AngleGain" value="-3.5"/> <!-- for tt02: >0, for hsp: <0 -->		
+
+        <!-- remap from="/odometry/filtered" to="odom" / --> 
+    </node>
+
+</launch>

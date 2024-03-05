@@ -1,0 +1,24 @@
+<launch>
+   <!-- RP LIDAR  -->
+    <node name="rplidarNode" pkg="rplidar_ros" type="rplidarNode" respawn="true" output="screen">
+        <param name="serial_port" type="string" value="/dev/ttyUSB0"/>
+        <param name="serial_baudrate"     type="int"    value="115200"/> 
+        <param name="frame_id"            type="string" value="laser"/>
+        <param name="inverted"            type="bool"   value="false"/>
+        <param name="angle_compensate"    type="bool"   value="true"/>
+    </node>
+
+    <!-- IMU  -->
+    <node name="imu_node" pkg="auto_car" type="imu_node.py" respawn="true" respawn_delay="2"/>
+
+    <!-- CONTROL --> 
+    <node name="rosserial_python" pkg="rosserial_python" type="serial_node.py">
+        <param name="port" value="/dev/ttyACM0" />
+        <param name="baud" value="115200" />
+    </node>
+
+    <!-- Odom Publisher -->
+    <node name="ekf_odom_pub" pkg="auto_car" type="ekf_odom_pub"/>
+    <node name="rviz_click_to_2d" pkg="auto_car" type="rviz_click_to_2d"/>
+
+</launch>

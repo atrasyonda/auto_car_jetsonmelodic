@@ -1,0 +1,19 @@
+<launch>
+    <!-- TF Configuration --> 
+    <include file="$(find auto_car)/launch/tf_test.launch"/> 
+
+    <!-- Sensor init --> 
+    <include file="$(find auto_car)/launch/sensor_init.launch"/> 
+
+    <!-- Robot_Localization -->
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se" clear_params="true">
+        <rosparam command="load" file="$(find auto_car)/config/ekf_params.yaml" />
+    </node>
+
+    <include file="$(find hector_mapping)/launch/mapping_default.launch"/>
+
+    <!-- RVIZ -->
+    <node pkg="rviz" type="rviz" name="rviz">
+    </node> 
+
+</launch>

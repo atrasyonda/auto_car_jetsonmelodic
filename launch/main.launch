@@ -1,0 +1,99 @@
+<launch>
+    <!-- 
+            ________   ________   ________          __         _______   ________
+           / ______/  / ______/  / ______/         / /        / __   /  / ____  /
+          / /_____   / /        / /_____          / /        / /__/ /  / /___/ /
+         / ______/  / /        /___    /         / /        / ___  /  / ____  /
+        / /_____   / /_____   _____/  /   __    / /_____   / /  / /  / /___/ /
+       /_______/  /_______/  /_______/   /__/  /_______/  /_/  /_/  /_______/  
+        ==================================================================
+        [AUTONOMOUS CAR Main entry launch file] 
+        ==================================================================
+        AV-ECS (c) 2023
+    -->
+
+    <!-- Transformation Configuration -->
+    <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" />
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0 0 0.2 0 0 0 base_link laser 30" />
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_imu" args="0 0 0.1 0 0 0 base_link imu 30" />
+    <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0.05 0 0 0 base_footprint base_link 30" />
+
+    <!-- RP LIDAR  -->
+    <node name="rplidarNode" pkg="rplidar_ros" type="rplidarNode" respawn="true" output="screen">
+        <param name="serial_port" type="string" value="/dev/ttyUSB0"/>
+        <param name="serial_baudrate"     type="int"    value="115200"/> 
+        <param name="frame_id"            type="string" value="laser"/>
+        <param name="inverted"            type="bool"   value="false"/>
+        <param name="angle_compensate"    type="bool"   value="true"/>
+    </node>
+
+    <!-- IMU  -->
+    <node name="imu_node" pkg="auto_car" type="imu_node.py" respawn="true" respawn_delay="2"/>
+
+    <!-- Motor --> 
+    <node name="rosserial_python" pkg="rosserial_python" type="serial_node.py">
+        <param name="port" value="/dev/ttyACM0" />
+        <param name="baud" value="115200" />
+    </node>
+
+    <!-- Odom Publisher -->
+    <node name="ekf_odom_pub" pkg="auto_car" type="ekf_odom_pub"/>
+    <node name="rviz_click_to_2d" pkg="auto_car" type="rviz_click_to_2d"/>
+
+    <!-- Extended Kalman Filter -->
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se" clear_params="true">
+        <rosparam command="load" file="$(find auto_car)/config/ekf_params.yaml" />
+    </node>
+
+    <!-- NAVIGATION -->
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+      <rosparam file="$(find auto_car)/config/costmap_common_params.yaml" command="load" ns="global_costmap" /> 
+      <rosparam file="$(find auto_car)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+      <rosparam file="$(find auto_car)/config/local_costmap_params.yaml" command="load" />
+      <rosparam file="$(find auto_car)/config/global_costmap_params.yaml" command="load" /> 
+      <rosparam file="$(find auto_car)/config/global_planner_params.yaml" command="load" />
+      <rosparam file="$(find auto_car)/config/local_planner_params.yaml" command="load" />
+
+		<param name="base_global_planner" value="global_planner/GlobalPlanner" />
+		<param name="planner_frequency" value="1.0" />
+		<param name="planner_patience" value="5.0" />
+
+		<param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
+		<param name="controller_frequency" value="5.0" />
+		<param name="controller_patience" value="15.0" />
+
+                <param name="clearing_rotation_allowed" value="false" />
+    </node>
+
+    <!-- Map Server -->
+    <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(find auto_car)/maps/coba.yaml">
+        <param name="frame_id" value="map"/>
+    </node>
+
+    <!-- AMCL -->
+    <node pkg="amcl" type="amcl" name="amcl" output="screen">
+	<rosparam file="$(find auto_car)/config/amcl_params.yaml" command="load" />
+		<param name="initial_pose_x"            value="0"/>
+		<param name="initial_pose_y"            value="0"/>
+		<param name="initial_pose_a"            value="0"/>
+    </node> 
+
+    <!-- Controller -->
+    <node pkg="auto_car" type="controller" respawn="false" name="L1_controller_v2" output="screen">       
+        <!-- L1 -->
+        <param name="Vcmd" value="2.0" /> <!-- speed of car m/s -->        
+        <!-- ESC -->
+        <param name="baseSpeed" value="1425"/> <!-- pwm for motor constant speed, 1480: stop, 1440: ~0.5m/s, 1430: ~1.5m/s --> 
+        <!-- Servo -->
+        <param name="baseAngle" value="90.0"/> <!-- the middle pos of servo, for tt02: 87, for hsp: ? -->
+        <param name="AngleGain" value="-3.5"/> <!-- for tt02: >0, for hsp: <0 -->		
+
+    </node>
+
+    <!--  RVIZ  -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find auto_car)/rviz/planner.rviz">
+    </node> 
+
+
+
+</launch>
